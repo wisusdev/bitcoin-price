@@ -1,7 +1,10 @@
 // Variables y selectores
 let actualizarData = document.querySelector('#actualizar');
 let actualPrice = document.querySelector('#actualPrice');
-let priceNow = 0;
+let variantPrice = document.querySelector('#variantPrice');
+let percentPrice = document.querySelector('#percentprice');
+let dataStorage = [];
+let priceOld = 0;
 
 // Eventos
 eventListeners();
@@ -10,7 +13,14 @@ function eventListeners(){
 		addData();
 		setInterval(addData, 30000);
 	});
-	actualizarData.addEventListener('click', addData);
+
+	actualizarData.addEventListener('click', () => {
+		addData();
+		actualizarData.disabled = true;
+		setTimeout(() => {
+			actualizarData.disabled = false;
+		}, 60000)
+	});
 }
 
 // Funciones
@@ -28,15 +38,21 @@ function obtenerDataBitcoin(result){
 	const criptoObj = {
 		updated : result.time.updated,
 		name: result.chartName,
-		usd: result.bpi.USD.rate
+		price: result.bpi.USD.rate,
+		oldPrice: '',
+		percentBTC: '',
+		differenceBTC: '',
 	};
 
-	actualPrice.textContent = `$${criptoObj.usd}`;
+	// El valor se cambia a Number con 4 digitos
+	priceNow = Number(criptoObj.price.replace(/,/g, "")).toFixed(4);
 
-	if (Number(criptoObj.usd.replace(/,/g, "")).toFixed(4) > priceNow) {
+	// Se asigna el valor al ID "actualPrice"  y se cambia el texto de color
+	actualPrice.textContent = `$${criptoObj.price}`;
+	if (priceNow > priceOld) {
 		actualPrice.classList.remove('text-danger', 'text-info')
 		actualPrice.classList.add('text-success');
-	} else if (Number(criptoObj.usd.replace(/,/g, "")).toFixed(4) < priceNow){
+	} else if (priceNow < priceOld){
 		actualPrice.classList.remove('text-success', 'text-info')
 		actualPrice.classList.add('text-danger');
 	} else {
@@ -44,11 +60,29 @@ function obtenerDataBitcoin(result){
 		actualPrice.classList.add('text-info');
 	}
 
-	console.log(priceNow, Number(criptoObj.usd.replace(/,/g, "")).toFixed(4));
+	// Obtnemos el porcentaje y se asigna al ID "percentprice"
+	let percentBTC = Number( ( (priceNow - priceOld) / priceNow ) * 100).toFixed(3)
+	percentPrice.textContent = percentBTC + '%';
 
-	priceNow = Number(criptoObj.usd.replace(/,/g, "")).toFixed(4);
+	// Obtenemos la diferencia con un numero mas legible
+	differenceBTC =  Number(priceNow - priceOld).toFixed(2);
+	variantPrice.textContent = '$' + differenceBTC;
 
+	// Se agregan nuevas propiedades al objeto
+	criptoObj.oldPrice = priceOld;
+	criptoObj.percentBTC = percentBTC;
+	criptoObj.differenceBTC = differenceBTC;
+
+
+	// Actualizamos el precio anterior
+	priceOld = priceNow;
+
+	// Se actualizan los datos en el grafico
 	myChart.data.labels.push(moment().format('LTS', criptoObj.updated));
-	myChart.data.datasets[0].data.push(Number(criptoObj.usd.replace(/,/g, "")).toFixed(4));
+	myChart.data.datasets[0].data.push(priceNow);
 	myChart.update();
+
+	// La data se almacena en LocalStorage para poder consultar luego
+	dataStorage = [...dataStorage, criptoObj];
+	localStorage.setItem('bitcoinPrice', JSON.stringify(dataStorage));
 }

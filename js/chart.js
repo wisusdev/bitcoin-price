@@ -28,7 +28,7 @@ const myChart = new Chart(ctx, {
 			cubicInterpolationMode: 'monotone',
 			tension: 0.4,
 			pointStyle: 'circle',
-			pointRadius: 0.8,
+			pointRadius: 2,
 		}]
 	},
 	options: {
