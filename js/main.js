@@ -3,15 +3,18 @@ let actualizarData = document.querySelector('#actualizar');
 let actualPrice = document.querySelector('#actualPrice');
 let variantPrice = document.querySelector('#variantPrice');
 let percentPrice = document.querySelector('#percentprice');
+let lastHour = document.querySelector('#lastHour');
 let dataStorage = [];
 let priceOld = 0;
+
+let initInterval;
 
 // Eventos
 eventListeners();
 function eventListeners(){
 	document.addEventListener('DOMContentLoaded', () => {
 		addData();
-		setInterval(addData, 30000);
+		initInterval = setInterval(addData, 30000);
 	});
 
 	actualizarData.addEventListener('click', () => {
@@ -20,6 +23,11 @@ function eventListeners(){
 		setTimeout(() => {
 			actualizarData.disabled = false;
 		}, 60000)
+	});
+
+	lastHour.addEventListener('click', () => {
+		limpiarChart();
+		loadData();
 	});
 }
 
@@ -33,56 +41,91 @@ function addData(){
 	}
 }
 
-function obtenerDataBitcoin(result){
+function obtenerDataBitcoin({bpi: {USD}, chartName, time}){
+	let rate = parseFloat(USD.rate.replace(',', ''));
 
 	const criptoObj = {
-		updated : result.time.updated,
-		name: result.chartName,
-		price: result.bpi.USD.rate,
-		oldPrice: '',
-		percentBTC: '',
-		differenceBTC: '',
+		updated : moment().format('LLL:s', time.updated),
+		name: chartName,
+		price: rate,
 	};
 
 	// El valor se cambia a Number con 4 digitos
-	priceNow = Number(criptoObj.price.replace(/,/g, "")).toFixed(4);
+	let priceNow = criptoObj.price;
 
 	// Se asigna el valor al ID "actualPrice"  y se cambia el texto de color
-	actualPrice.textContent = `$${criptoObj.price}`;
-	if (priceNow > priceOld) {
-		actualPrice.classList.remove('text-danger', 'text-info')
-		actualPrice.classList.add('text-success');
-	} else if (priceNow < priceOld){
-		actualPrice.classList.remove('text-success', 'text-info')
-		actualPrice.classList.add('text-danger');
-	} else {
-		actualPrice.classList.remove('text-success', 'text-danger')
-		actualPrice.classList.add('text-info');
-	}
+	actualPrice.textContent = `$${USD.rate}`;
+	changeClass(actualPrice, priceNow);
 
 	// Obtnemos el porcentaje y se asigna al ID "percentprice"
-	let percentBTC = Number( ( (priceNow - priceOld) / priceNow ) * 100).toFixed(3)
-	percentPrice.textContent = percentBTC + '%';
+	let percentBTC = Number( ( (priceNow - priceOld) / priceNow ) * 100);
+	percentPrice.textContent = percentBTC.toFixed(3) + '%';
+	changeClass(percentPrice, priceNow);
 
 	// Obtenemos la diferencia con un numero mas legible
-	differenceBTC =  Number(priceNow - priceOld).toFixed(2);
-	variantPrice.textContent = '$' + differenceBTC;
+	let differenceBTC = Number(priceNow - priceOld);
+	variantPrice.textContent = '$' + differenceBTC.toFixed(2);
+	changeClass(variantPrice, priceNow);
 
 	// Se agregan nuevas propiedades al objeto
 	criptoObj.oldPrice = priceOld;
 	criptoObj.percentBTC = percentBTC;
 	criptoObj.differenceBTC = differenceBTC;
 
-
 	// Actualizamos el precio anterior
 	priceOld = priceNow;
 
-	// Se actualizan los datos en el grafico
-	myChart.data.labels.push(moment().format('LTS', criptoObj.updated));
-	myChart.data.datasets[0].data.push(priceNow);
-	myChart.update();
-
 	// La data se almacena en LocalStorage para poder consultar luego
 	dataStorage = [...dataStorage, criptoObj];
-	localStorage.setItem('bitcoinPrice', JSON.stringify(dataStorage));
+
+	updateChart(criptoObj);
+
+	syncStorage();
+
+}
+
+function loadData(){
+	clearInterval(initInterval);
+
+	let BTCdata = JSON.parse(localStorage.getItem('bitcoinData')) || [];
+
+	let filter = BTCdata.filter(n => n.updated > moment().subtract(1, 'hour').format('LLL:s') && n.updated < moment().format('LLL:s'))
+
+	filter.forEach(data => {
+		const {price, updated} = data;
+		myChart.data.labels.push(moment().format('LTS', updated));
+		myChart.data.datasets[0].data.push(price);
+	});
+
+	myChart.update();
+}
+
+function limpiarChart(){
+	myChart.data.labels.length = 0;
+	myChart.data.datasets[0].data.length = 0;
+	myChart.update();
+}
+
+function updateChart(data){
+	// Se actualizan los datos en el grafico
+	myChart.data.labels.push(moment().format('LTS', data.updated));
+	myChart.data.datasets[0].data.push(data.price);
+	myChart.update();
+}
+
+function syncStorage(){
+	localStorage.setItem('bitcoinData', JSON.stringify(dataStorage));
+}
+
+function changeClass(item, nowPrice){
+	if (nowPrice > priceOld) {
+		item.classList.remove('text-danger', 'text-info')
+		item.classList.add('text-success');
+	} else if (nowPrice < priceOld){
+		item.classList.remove('text-success', 'text-info')
+		item.classList.add('text-danger');
+	} else {
+		item.classList.remove('text-success', 'text-danger')
+		item.classList.add('text-info');
+	}
 }

@@ -4,8 +4,7 @@ gradient = ctx.createLinearGradient(0, 0, 0, 450);
 gradient.addColorStop(0, 'rgba(250,174,50,1)');
 gradient.addColorStop(1, 'rgba(250,174,50,0)');
 
-
-const myChart = new Chart(ctx, {
+const chartConf = {
 	type: 'line',
 	toolTip: {
 		shared: true
@@ -35,4 +34,6 @@ const myChart = new Chart(ctx, {
 
 	}
 
-});
+}
+
+const myChart = new Chart(ctx, chartConf);
