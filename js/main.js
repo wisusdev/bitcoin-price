@@ -3,6 +3,7 @@ let actualizarData = document.querySelector('#actualizar');
 let actualPrice = document.querySelector('#actualPrice');
 let variantPrice = document.querySelector('#variantPrice');
 let percentPrice = document.querySelector('#percentprice');
+let isNow = document.querySelector('#isNow');
 let lastHour = document.querySelector('#lastHour');
 let dataStorage = [];
 let priceOld = 0;
@@ -25,9 +26,16 @@ function eventListeners(){
 		}, 60000)
 	});
 
+	isNow.addEventListener('click', () => {
+		limpiarChart();
+		addData();
+	})
+
 	lastHour.addEventListener('click', () => {
 		limpiarChart();
 		loadData();
+		clearInterval(initInterval);
+		initInterval = setInterval(addData, 30000);
 	});
 }
 
@@ -89,11 +97,11 @@ function loadData(){
 
 	let BTCdata = JSON.parse(localStorage.getItem('bitcoinData')) || [];
 
-	let filter = BTCdata.filter(n => n.updated > moment().subtract(1, 'hour').format('LLL:s') && n.updated < moment().format('LLL:s'))
+	let filter = BTCdata.filter(n => n.updated > moment().subtract(1, 'hour').format('LLL:s') && n.updated < moment().format('LLL:s'));
 
 	filter.forEach(data => {
-		const {price, updated} = data;
-		myChart.data.labels.push(moment().format('LTS', updated));
+		let {price, updated} = data;
+		myChart.data.labels.push(updated.slice(updated.length - 8));
 		myChart.data.datasets[0].data.push(price);
 	});
 
