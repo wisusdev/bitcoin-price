@@ -109,8 +109,6 @@ function loadData(){
 
 	let filter = BTCdata.filter(n => n.updated > moment().subtract(1, 'hour').format('LLL:s') && n.updated < moment().format('LLL:s'));
 
-	console.log(filter);
-
 	filter.forEach(data => {
 		let {price, updated} = data;
 		myChart.data.labels.push(updated.slice(updated.length - 8));
@@ -122,7 +120,9 @@ function loadData(){
 
 function saveMyMount(){
 	let amountResult;
-	let myMountRT = Number(((percentBTC / myMount.value) * 100));
+	let myMountRT = Number(myMount.value * percentBTC) / 100;
+
+	console.log(myMountRT)
 
 	if (myMountOldVariant > 0){
 		amountResult = Math.abs(Math.abs(myMount.value) + Math.abs(myMountOldVariant))
