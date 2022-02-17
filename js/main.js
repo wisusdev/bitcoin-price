@@ -5,8 +5,15 @@ let variantPrice = document.querySelector('#variantPrice');
 let percentPrice = document.querySelector('#percentprice');
 let isNow = document.querySelector('#isNow');
 let lastHour = document.querySelector('#lastHour');
+let myMount = document.querySelector('#myMount');
+let myMountResult = document.querySelector('#myMountResult');
+
 let dataStorage = [];
+let myMountStorage = [];
 let priceOld = 0;
+let percentBTC;
+
+let myMountOldVariant = 0;
 
 let initInterval;
 
@@ -29,13 +36,14 @@ function eventListeners(){
 	isNow.addEventListener('click', () => {
 		limpiarChart();
 		addData();
+		clearInterval(initInterval);
+		initInterval = setInterval(addData, 30000);
 	})
 
 	lastHour.addEventListener('click', () => {
 		limpiarChart();
 		loadData();
 		clearInterval(initInterval);
-		initInterval = setInterval(addData, 30000);
 	});
 }
 
@@ -66,7 +74,7 @@ function obtenerDataBitcoin({bpi: {USD}, chartName, time}){
 	changeClass(actualPrice, priceNow);
 
 	// Obtnemos el porcentaje y se asigna al ID "percentprice"
-	let percentBTC = Number( ( (priceNow - priceOld) / priceNow ) * 100);
+	percentBTC = Number( ( (priceNow - priceOld) / priceNow ) * 100);
 	percentPrice.textContent = percentBTC.toFixed(3) + '%';
 	changeClass(percentPrice, priceNow);
 
@@ -90,14 +98,18 @@ function obtenerDataBitcoin({bpi: {USD}, chartName, time}){
 
 	syncStorage();
 
+	if (myMount.value !== '' && myMount.value !== null) {
+		saveMyMount();
+	}
+
 }
 
 function loadData(){
-	clearInterval(initInterval);
-
 	let BTCdata = JSON.parse(localStorage.getItem('bitcoinData')) || [];
 
 	let filter = BTCdata.filter(n => n.updated > moment().subtract(1, 'hour').format('LLL:s') && n.updated < moment().format('LLL:s'));
+
+	console.log(filter);
 
 	filter.forEach(data => {
 		let {price, updated} = data;
@@ -106,6 +118,28 @@ function loadData(){
 	});
 
 	myChart.update();
+}
+
+function saveMyMount(){
+	let amountResult;
+	let myMountRT = Number(((percentBTC / myMount.value) * 100));
+
+	if (myMountOldVariant > 0){
+		amountResult = Math.abs(Math.abs(myMount.value) + Math.abs(myMountOldVariant))
+	} else {
+		amountResult = Math.abs(Math.abs(myMount.value) - Math.abs(myMountOldVariant));
+	}
+
+	if (myMountRT > 0) {
+		amountResult = Math.abs(Math.abs(amountResult) + Math.abs(myMountRT));
+	} else {
+		amountResult = Math.abs(Math.abs(amountResult) - Math.abs(myMountRT));
+	}
+
+	myMountResult.textContent = '$' + Number(amountResult).toFixed(2);
+
+	myMountOldVariant = myMountRT;
+
 }
 
 function limpiarChart(){
