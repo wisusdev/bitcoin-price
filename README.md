@@ -4,4 +4,4 @@ Estadistica en tiempo real del precio del bitcoin usando el API de [Coindesk](ht
 
 [Vista previa](https://wisus-bitcoin-price.netlify.app/)
 
-![Imgur](https://i.imgur.com/kvkPo3u.png "Home")
+![Imgur](https://i.imgur.com/pVUdIxw.png "Home")
